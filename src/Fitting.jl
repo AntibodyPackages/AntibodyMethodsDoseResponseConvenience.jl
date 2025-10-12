@@ -11,7 +11,10 @@
 
 # Obtain the visual volumes in a logarithmic scale.
 function log_volumes(centers,volumes)
-	return log10.(centers .+ volumes/2) .- log10.(centers .- volumes/2)
+	T = promote_type(eltype(centers),eltype(volumes), Float64)
+	c = BigFloat.(centers)
+	v = BigFloat.(volumes)
+	return convert.(T,log10.(c .+ v/2) .- log10.(c .- v/2))
 end
 
 
@@ -245,6 +248,7 @@ function FittingCondition(concentrations::AbstractVector{T}, response_replicates
 	# If all samples are the same, the std is 0, which causes problems during the fitting.
 	for i in eachindex(errors)
 		if iszero(errors[i])
+			@warn("Changed errors[$i] to eps() since standard deviation was zero!")
 			errors[i] = eps()
 		end
 	end

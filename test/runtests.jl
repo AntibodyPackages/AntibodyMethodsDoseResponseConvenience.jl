@@ -9,7 +9,7 @@ cd(@__DIR__)
 
         # log_volumes(centers, volumes) | should calculate the volume of the intervals with logarithmic boundaries [log(left), log(right)].
         log_volumes = AntibodyMethodsDoseResponseConvenience.log_volumes
-        @test log_volumes([10,20,30],[2,4,6]) == [log10(11)-log10(9), log10(22)-log10(18), log10(33)-log10(27)]
+        @test log_volumes([10,20,30],[2,4,6]) == Float64.([log10(BigFloat(11))-log10(BigFloat(9)), log10(BigFloat(22))-log10(BigFloat(18)), log10(BigFloat(33))-log10(BigFloat(27))])
 
         # grid_range(concentrations, lower_shift, upper_shift, exponent_rounding)
         # Should return the range of the concentrations, adjusted by the shifts and rounded exponents (if exponent_rounding = true).
