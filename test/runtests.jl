@@ -36,12 +36,29 @@ cd(@__DIR__)
         volumes = [5,6,8]
         lv = log_volumes(centers,volumes)
 
+        # Test default exponent keyword.
+
         # Without offset (3-element parameter).
         P(λ) = (-(λ[1]/lv[1]-λ[2]/lv[2])^2 - (λ[3]/lv[3]-λ[2]/lv[2])^2)/9
         # With offset (4-element parameter).
         Q(λ) = (-(λ[1]/lv[1]-λ[2]/lv[2])^2 - (λ[3]/lv[3]-λ[2]/lv[2])^2 - λ[4]^2)/16
 
         prior_generator = scaled_log_volume_prior(4)
+        p = prior_generator(centers,volumes,nothing)
+        q = prior_generator(centers,volumes,1) # offset != nothing
+
+        # P and Q are unscaled -> multiply with scale = 4.
+        @test p([1,2,3]) .≈ 4*P([1,2,3])
+        @test q([1,2,3,4]) .≈ 4*Q([1,2,3,4])
+
+        # Test exponent keyword.
+
+        # Without offset (3-element parameter).
+        P(λ) = (-(λ[1]/lv[1]-λ[2]/lv[2])^2 - (λ[3]/lv[3]-λ[2]/lv[2])^2)/3
+        # With offset (4-element parameter).
+        Q(λ) = (-(λ[1]/lv[1]-λ[2]/lv[2])^2 - (λ[3]/lv[3]-λ[2]/lv[2])^2 - λ[4]^2)/4
+
+        prior_generator = scaled_log_volume_prior(4, scaling_exponent = 1)
         p = prior_generator(centers,volumes,nothing)
         q = prior_generator(centers,volumes,1) # offset != nothing
 
@@ -155,18 +172,28 @@ cd(@__DIR__)
         @test isnothing(condition.result_concentrations)
 
 
-        # Test effect of keywords
+        # Test effect of keywords.
             # Use default AdaptiveOptions() -> objective now :lsq.
             # Use trivial optimizer x->x.
             # Use scale (compare to scaled_log_volume_prior).
 
         # Constructor using FittingData is already tested (mutability test above).
 
-        # Constructor using replicates.
+        # Scale keyword with default scaling_exponent.
         condition = FittingCondition(concentrations,responses,options_1 = AdaptiveOptions(), options_2 = AdaptiveOptions(), minimizer_1 = x->x, minimizer_2 = x->x, scale = 3, result_concentrations = [1,2,3])
         @test condition.options_1.objective == :log_posterior
         @test condition.options_2.objective == :log_posterior
         @test condition.options_1.prior_generator([10,20,30],[1,2,3],nothing)([2,3,4]) == scaled_log_volume_prior(3)([10,20,30],[1,2,3],nothing)([2,3,4])
+        @test condition.minimizer_1(10) == 10
+        @test condition.minimizer_2(10) == 10
+        @test condition.result_concentrations == [1,2,3]
+
+
+        # Scale keyword with scaling_exponent.
+        condition = FittingCondition(concentrations,responses,options_1 = AdaptiveOptions(), options_2 = AdaptiveOptions(), minimizer_1 = x->x, minimizer_2 = x->x, scale = 3, scaling_exponent = 1, result_concentrations = [1,2,3])
+        @test condition.options_1.objective == :log_posterior
+        @test condition.options_2.objective == :log_posterior
+        @test condition.options_1.prior_generator([10,20,30],[1,2,3],nothing)([2,3,4]) == scaled_log_volume_prior(3,scaling_exponent = 1)([10,20,30],[1,2,3],nothing)([2,3,4])
         @test condition.minimizer_1(10) == 10
         @test condition.minimizer_2(10) == 10
         @test condition.result_concentrations == [1,2,3]

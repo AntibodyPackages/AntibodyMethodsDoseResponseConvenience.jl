@@ -58,22 +58,22 @@ export scaled_log_volume_prior, minimizer_generator, FittingCondition, fit_condi
 
 
 @doc raw"""
-	scaled_log_volume_prior(scale::Real = 1)
+	scaled_log_volume_prior(scale::Real = 1; scaling_exponent = 2)
 Create a prior generator (see [`AdaptiveOptions`](@ref)) that generates the following prior:
 
 ```math
-\text{prior}(\lambda) = - \frac{\text{scale}}{\text{length}(λ)^2} \cdot \left( \text{offset}^2 + \sum_{i=2}^{\text{length}(\lambda)} \left(\frac{\lambda_{i-1}}{\log_{10}(r_{i-1})-\log_{10}(l_{i-1})} - \frac{\lambda_{i}}{\log_{10}(r_{i})-\log_{10}(l_{i})}\right)^2 \right)
+\text{prior}(\lambda) = - \frac{\text{scale}}{\text{length}(λ)^\text{scaling_exponent}} \cdot \left( \text{offset}^2 + \sum_{i=2}^{\text{length}(\lambda)} \left(\frac{\lambda_{i-1}}{\log_{10}(r_{i-1})-\log_{10}(l_{i-1})} - \frac{\lambda_{i}}{\log_{10}(r_{i})-\log_{10}(l_{i})}\right)^2 \right)
 ```
 
 where ``[l_i,r_i]`` are the intervals corresponding to ``\lambda_i``.
 """
-function scaled_log_volume_prior(scale::Real = 1)
+function scaled_log_volume_prior(scale::Real = 1; scaling_exponent = 2)
 	return function(centers, volumes, offset) 
 		lV = log_volumes(centers,volumes)
 		if isnothing(offset)
-			return λ ->  -scale*(sum((λ[i]/lV[i]-λ[i+1]/lV[i+1])^2 for i in 1:length(λ)-1))/length(λ)^2
+			return λ ->  -scale*(sum((λ[i]/lV[i]-λ[i+1]/lV[i+1])^2 for i in 1:length(λ)-1))/length(λ)^scaling_exponent
 		else
-			return λ -> -scale*(sum((λ[i]/lV[i]-λ[i+1]/lV[i+1])^2 for i in 1:length(λ)-2) + λ[end]^2)/length(λ)^2
+			return λ -> -scale*(sum((λ[i]/lV[i]-λ[i+1]/lV[i+1])^2 for i in 1:length(λ)-2) + λ[end]^2)/length(λ)^scaling_exponent
 		end
 	end
 end
@@ -154,7 +154,7 @@ The main [`FittingData`](https://antibodypackages.github.io/FittingObjectiveFunc
 
 **Keywords**
 
-The keywords correspond to the struct fields, except for the additional `scale` keyword. Setting `scale` overwrites the `objective` field to `:log_posterior` and the `prior_generator` field to [`scaled_log_volume_prior`](@ref) for both options: `options_1` and `options_2`.
+The keywords correspond to the struct fields, except for the additional `scale` keyword. Setting `scale` overwrites the `objective` field to `:log_posterior` and the `prior_generator` field to [`scaled_log_volume_prior`](@ref), passing the `scaling_exponent` keyword, for both options: `options_1` and `options_2`.
 
 The keyword defaults are:
 
@@ -166,6 +166,7 @@ The keyword defaults are:
 * `minimizer_2 = minimizer_generator(LBFGS())`
 * `result_concentrations = nothing`
 * `scale = nothing`
+* `scaling_exponent = 2`
 """
 mutable struct FittingCondition
 	data::FittingData
@@ -187,7 +188,8 @@ mutable struct FittingCondition
 		minimizer_1::Function = minimizer_generator(NelderMead()),
 		minimizer_2 = minimizer_generator(LBFGS()) , 
 		result_concentrations::Union{Nothing,AbstractArray{T,N}} = nothing,
-		scale::Union{Nothing,Real}=nothing) where {N, T <: Real}
+		scale::Union{Nothing,Real}=nothing,
+		scaling_exponent = 2) where {N, T <: Real}
 
 		# Default constructors should check for proper dose-response data. Improper dose-response data can be used by explicit mutation if need be.
 		dose_response_check(data)
@@ -198,9 +200,9 @@ mutable struct FittingCondition
 		end
 		
 		if !isnothing(scale)
-			options_1.prior_generator = scaled_log_volume_prior(scale)
+			options_1.prior_generator = scaled_log_volume_prior(scale; scaling_exponent = scaling_exponent)
 			options_1.objective = :log_posterior
-			options_2.prior_generator = scaled_log_volume_prior(scale)
+			options_2.prior_generator = scaled_log_volume_prior(scale; scaling_exponent = scaling_exponent)
 			options_2.objective = :log_posterior
 		end
 
