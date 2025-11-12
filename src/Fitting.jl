@@ -62,7 +62,7 @@ export scaled_log_volume_prior, minimizer_generator, FittingCondition, fit_condi
 Create a prior generator (see [`AdaptiveOptions`](@ref)) that generates the following prior:
 
 ```math
-\text{prior}(\lambda) = - \frac{\text{scale}}{\text{length}(λ)^\text{scaling_exponent}} \cdot \left( \text{offset}^2 + \sum_{i=2}^{\text{length}(\lambda)} \left(\frac{\lambda_{i-1}}{\log_{10}(r_{i-1})-\log_{10}(l_{i-1})} - \frac{\lambda_{i}}{\log_{10}(r_{i})-\log_{10}(l_{i})}\right)^2 \right)
+\text{prior}(\lambda) = - \frac{\text{scale}}{\text{length}(λ)^\text{scaling exponent}} \cdot \left( \text{offset}^2 + \sum_{i=2}^{\text{length}(\lambda)} \left(\frac{\lambda_{i-1}}{\log_{10}(r_{i-1})-\log_{10}(l_{i-1})} - \frac{\lambda_{i}}{\log_{10}(r_{i})-\log_{10}(l_{i})}\right)^2 \right)
 ```
 
 where ``[l_i,r_i]`` are the intervals corresponding to ``\lambda_i``.
